@@ -5,7 +5,8 @@ import anthropic
 
 app = Flask(__name__)
 CORS(app)
-client = anthropic.Anthropic()  # reads ANTHROPIC_API_KEY from environment
+KEY = os.environ.get("ANTHROPIC_API_KEY", "").strip().strip("'\"")
+client = anthropic.Anthropic(api_key=KEY or None)
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 
@@ -15,7 +16,10 @@ def home():
 
 @app.get("/health")
 def health():
-    return "JARVIS backend is running"
+    if not KEY:
+        return "JARVIS backend is running | API key: MISSING (add ANTHROPIC_API_KEY in Render Environment)"
+    ok = "looks right" if KEY.startswith("sk-ant-") else "WRONG FORMAT (should start with sk-ant-)"
+    return "JARVIS backend is running | API key: found, " + ok + ", length " + str(len(KEY))
 
 @app.post("/chat")
 def chat():
@@ -37,3 +41,4 @@ def chat():
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
+    
