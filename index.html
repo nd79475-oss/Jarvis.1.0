@@ -44,6 +44,8 @@ select option{background:#fff1de}input[type=range]{accent-color:var(--acc)}input
 #inp{flex:1;min-width:0;background:#fff3e2;border:1px solid var(--ln);color:var(--tx);border-radius:3px;padding:11px;font:inherit}
 .btn{background:var(--acc);color:#fff1de;border:1px solid var(--acc);border-radius:3px;padding:0 15px;font-size:16px;font-weight:700;cursor:pointer;transition:.15s}
 .btn:hover{filter:brightness(1.15);box-shadow:0 0 12px #9e1b3288}.btn:active{transform:scale(.96)}
+.applink{display:inline-block;border:1px solid var(--acc);color:var(--acc);padding:6px 12px;border-radius:3px;text-decoration:none;font-size:11px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;transition:.15s}
+.applink:hover{background:var(--acc);color:#fff1de}
 #mic.rec{background:var(--red);border-color:var(--red);color:#fff}
 @media(max-width:900px){body{display:flex;flex-direction:column;overflow:auto;height:auto;min-height:100%}
 #center{display:flex;flex-direction:column;flex:none}#orbbox{height:300px;flex:none}#panel{height:250px;flex:none}#chat{height:75vh;flex:none}#left{flex:none;height:auto;order:3}}
@@ -52,7 +54,7 @@ select option{background:#fff1de}input[type=range]{accent-color:var(--acc)}input
 
 <div id="center">
  <div class="card" id="orbbox"><canvas id="cv"></canvas><svg id="lines"></svg>
-  <div id="nodes"><button class="node on" data-k="memory">MEMORY</button><button class="node" data-k="skills">SKILLS</button><button class="node" data-k="monitor">MONITOR</button><button class="node" data-k="settings">SETTINGS</button></div>
+  <div id="nodes"><button class="node on" data-k="memory">MEMORY</button><button class="node" data-k="skills">SKILLS</button><button class="node" data-k="apps">APPS</button><button class="node" data-k="monitor">MONITOR</button><button class="node" data-k="settings">SETTINGS</button></div>
   <button id="term">TERMINATE</button><div id="status">STANDBY</div><canvas id="wv" width="220" height="28"></canvas></div>
  <div class="card" id="panel"><div id="pbody"></div></div>
 </div>
@@ -63,8 +65,8 @@ select option{background:#fff1de}input[type=range]{accent-color:var(--acc)}input
 <script>
 const $=s=>document.querySelector(s),$$=s=>document.querySelectorAll(s);
 const LS=(k,v)=>{try{if(v===undefined)return JSON.parse(localStorage.getItem(k));localStorage.setItem(k,JSON.stringify(v))}catch(e){return null}};
-const S=Object.assign({mem:[],hist:[],voice:true,wake:false,rate:1,pitch:1,acc:"#9e1b32",lang:"en-IN",vname:"",api:""},LS("jv2")||{});S.wake=false;if(S.acc==="#19e6c1"||S.acc==="#9e1b32")S.acc="#9e1b32";
-const save=()=>LS("jv2",{mem:S.mem,hist:S.hist.slice(-40),voice:S.voice,rate:S.rate,pitch:S.pitch,acc:S.acc,lang:S.lang,vname:S.vname,api:S.api});
+const S=Object.assign({mem:[],hist:[],voice:true,wake:false,rate:1,pitch:1,acc:"#9e1b32",lang:"en-IN",vname:"",api:"",apps:[]},LS("jv2")||{});S.wake=false;if(S.acc==="#19e6c1"||S.acc==="#9e1b32")S.acc="#9e1b32";
+const save=()=>LS("jv2",{mem:S.mem,hist:S.hist.slice(-40),voice:S.voice,rate:S.rate,pitch:S.pitch,acc:S.acc,lang:S.lang,vname:S.vname,api:S.api,apps:S.apps});
 const API=()=>S.api||(location.protocol.startsWith("http")?location.origin:"http://localhost:5000");
 let rgb=[201,164,92],mode="idle",busy=false,speaking=false,msgs=0,online=null,lats=[],memT=0,cur="memory",t0=Date.now(),speed=.004;
 function accent(h){S.acc=h;document.documentElement.style.setProperty("--acc",h);rgb=[1,3,5].map(i=>parseInt(h.substr(i,2),16))}accent(S.acc);
@@ -100,7 +102,7 @@ function seg(a,b,col,aF,aB,w){cx.strokeStyle="rgba("+col+","+((a[2]+b[2])>=0?aF:
 /* NODE LINES */
 function lines(){const b=$("#orbbox").getBoundingClientRect(),R=Math.min(b.width,b.height)*.25*1.6,X=b.width/2,Y=b.height/2-10;let d="";
  $$(".node").forEach((n,i)=>{const r=n.getBoundingClientRect(),x=r.right-b.left,y=r.top+r.height/2-b.top;
-  d+='<path class="'+(n.dataset.k===cur?"on":"")+'" d="M'+x+' '+y+' H'+(x+22+i*14)+' V'+(Y+(i-1.5)*14)+' H'+(X-R)+'"/>'});$("#lines").innerHTML=d}
+  d+='<path class="'+(n.dataset.k===cur?"on":"")+'" d="M'+x+' '+y+' H'+(x+22+i*14)+' V'+(Y+(i-($$('.node').length-1)/2)*14)+' H'+(X-R)+'"/>'});$("#lines").innerHTML=d}
 addEventListener("resize",()=>{rs();lines()});rs();setTimeout(lines,60);
 
 /* MAP + OFFICE */
@@ -124,7 +126,11 @@ function panel(k){cur=k||cur;$$(".node").forEach(n=>n.classList.toggle("on",n.da
  if(cur==="memory"){p.innerHTML='<h3>Memory</h3>'+(S.mem.length?S.mem.map((m,i)=>'<div class="mem"><span>'+esc(m)+'</span><b data-i="'+i+'">✕</b></div>').join(""):'<div style="color:var(--dm)">Empty. Say: remember that I like cricket</div>')+'<div class="row"><input id="mi" placeholder="Add a memory..."><button class="sm" id="ma">ADD</button></div>';
   p.querySelectorAll("b").forEach(b=>b.onclick=()=>{S.mem.splice(+b.dataset.i,1);save();panel()});
   $("#ma").onclick=()=>{const v=$("#mi").value.trim();if(v){S.mem.push(v);memT=Date.now()+2500;save();panel()}}}
- if(cur==="skills")p.innerHTML='<h3>Skills</h3>• <b>time</b> / <b>date</b><br>• <b>weather</b> (allow location)<br>• <b>timer 5 minutes</b><br>• <b>calculate 12*8+3</b><br>• <b>remember …</b> / <b>what do you remember</b> / <b>forget all</b><br>• <b>open youtube / google / maps / whatsapp</b><br>• <b>search for …</b><br>• <b>theme red / brown / gold / green / blue</b><br>• <b>clear chat</b><br>• anything else → AI brain<br>• Wake word: turn on in Settings, then say “Jarvis …”';
+ if(cur==="apps"){p.innerHTML='<h3>Apps</h3><div style="color:var(--dm);margin-bottom:6px">Say: open <i>any app</i>. Or add your own below.</div><div id="qa" style="display:flex;flex-wrap:wrap;gap:6px"></div><h3 style="margin-top:12px">My apps</h3>'+(S.apps.length?S.apps.map((a,i)=>'<div class="mem"><span>'+esc(a.n)+' <small style="color:var(--dm)">'+esc(a.p||a.u)+'</small></span><b data-i="'+i+'">✕</b></div>').join(""):'<div style="color:var(--dm)">None yet.</div>')+'<div class="row"><input id="an" placeholder="App name"><input id="ap" placeholder="package or https link"><button class="sm" id="aa">ADD</button></div>';
+  ["whatsapp","youtube","instagram","gmail","maps","camera","settings","spotify","phonepe","amazon","chrome","zomato"].forEach(n=>{const b=document.createElement("button");b.className="chip";b.textContent=n;b.onclick=async()=>{bubble("a",await openApp(n))};$("#qa").appendChild(b)});
+  p.querySelectorAll("b").forEach(b=>b.onclick=()=>{S.apps.splice(+b.dataset.i,1);save();panel()});
+  $("#aa").onclick=()=>{const n=$("#an").value.trim().toLowerCase(),v=$("#ap").value.trim();if(!n||!v)return;if(pkgOk(v))S.apps.push({n,p:v});else if(urlOk(v))S.apps.push({n,u:v});else return log("invalid package or link");save();panel()}}
+ if(cur==="skills")p.innerHTML='<h3>Skills</h3>• <b>time</b> / <b>date</b><br>• <b>weather</b> (allow location)<br>• <b>timer 5 minutes</b><br>• <b>calculate 12*8+3</b><br>• <b>remember …</b> / <b>what do you remember</b> / <b>forget all</b><br>• <b>open any app</b> (open whatsapp, open camera, open zomato…)<br>• <b>add app NAME package com.x.y</b> or <b>link https://…</b><br>• <b>call 9876543210</b><br>• <b>search for …</b><br>• <b>theme red / brown / gold / green / blue</b><br>• <b>clear chat</b><br>• anything else → AI brain<br>• Wake word: turn on in Settings, then say “Jarvis …”';
  if(cur==="monitor"){const al=lats.length?Math.round(lats.reduce((a,b)=>a+b,0)/lats.length):0,u=Math.floor((Date.now()-t0)/1000);
   p.innerHTML='<h3>Monitor</h3><div class="row"><span>Backend</span>'+(online===null?"checking…":online?'<b style="color:#2f7a4f">ONLINE</b>':'<b style="color:var(--red)">OFFLINE</b>')+'</div><div class="row"><span>Latency</span>'+al+' ms avg</div><div class="row"><span>Messages</span>'+msgs+'</div><div class="row"><span>Memory</span>'+S.mem.length+' items</div><div class="row"><span>Uptime</span>'+Math.floor(u/60)+"m "+u%60+'s</div><div class="row"><span>Voice in</span>'+(SR?"supported":"needs Chrome")+'</div><div class="row"><span>Server</span>'+esc(API())+'</div>'}
  if(cur==="settings")settingsUI(p)}
@@ -165,6 +171,74 @@ function wake(on){S.wake=on;if(!on){if(wk){wk.onend=null;wk.stop();wk=null}log("
   wk.onerror=e=>{if(e.error==="not-allowed"){S.wake=false;panel()}};wk.onend=()=>setTimeout(run,500);try{wk.start()}catch(e){}};
  run();log("wake word on: say Jarvis")}
 
+/* OPEN ANY APP */
+const APPS=`whatsapp,wa|com.whatsapp|https://web.whatsapp.com
+whatsapp business|com.whatsapp.w4b|https://business.whatsapp.com
+youtube,yt|com.google.android.youtube|https://youtube.com
+youtube music|com.google.android.apps.youtube.music|https://music.youtube.com
+instagram,insta|com.instagram.android|https://instagram.com
+facebook,fb|com.facebook.katana|https://facebook.com
+messenger|com.facebook.orca|https://messenger.com
+telegram|org.telegram.messenger|https://web.telegram.org
+snapchat,snap|com.snapchat.android|https://snapchat.com
+twitter,x|com.twitter.android|https://x.com
+linkedin|com.linkedin.android|https://linkedin.com
+reddit|com.reddit.frontpage|https://reddit.com
+pinterest|com.pinterest|https://pinterest.com
+discord|com.discord|https://discord.com/app
+spotify|com.spotify.music|https://open.spotify.com
+netflix|com.netflix.mediaclient|https://netflix.com
+prime video,amazon prime|com.amazon.avod.thirdpartyclient|https://primevideo.com
+hotstar,jiohotstar|in.startv.hotstar|https://hotstar.com
+gmail,mail|com.google.android.gm|https://mail.google.com
+google maps,maps|com.google.android.apps.maps|https://maps.google.com
+chrome|com.android.chrome|https://google.com
+google,google app|com.google.android.googlequicksearchbox|https://google.com
+google drive,drive|com.google.android.apps.docs|https://drive.google.com
+google photos,photos|com.google.android.apps.photos|https://photos.google.com
+google meet,meet|com.google.android.apps.tachyon|https://meet.google.com
+zoom|us.zoom.videomeetings|https://zoom.us
+teams,microsoft teams|com.microsoft.teams|https://teams.microsoft.com
+play store|com.android.vending|https://play.google.com
+amazon|in.amazon.mShop.android.shopping|https://amazon.in
+flipkart|com.flipkart.android|https://flipkart.com
+myntra|com.myntra.android|https://myntra.com
+meesho|com.meesho.supply|https://meesho.com
+zomato|com.application.zomato|https://zomato.com
+swiggy|in.swiggy.android|https://swiggy.com
+uber|com.ubercab|https://m.uber.com
+ola|com.olacabs.customer|https://olacabs.com
+rapido|com.rapido.passenger|https://rapido.bike
+paytm|net.one97.paytm|https://paytm.com
+phonepe|com.phonepe.app|https://phonepe.com
+google pay,gpay|com.google.android.apps.nbu.paisa.user|https://pay.google.com
+truecaller|com.truecaller|https://truecaller.com
+duolingo|com.duolingo|https://duolingo.com
+canva|com.canva.editor|https://canva.com
+chatgpt|com.openai.chatgpt|https://chatgpt.com
+claude|com.anthropic.claude|https://claude.ai
+github|com.github.android|https://github.com
+notion|notion.id|https://notion.so
+twitch|tv.twitch.android.app|https://twitch.tv`.split("\n").map(l=>{const a=l.split("|");return{n:a[0].split(","),p:a[1],w:a[2]}});
+const SYS={camera:"intent:#Intent;action=android.media.action.STILL_IMAGE_CAMERA;end",settings:"intent:#Intent;action=android.settings.SETTINGS;end",wifi:"intent:#Intent;action=android.settings.WIFI_SETTINGS;end",bluetooth:"intent:#Intent;action=android.settings.BLUETOOTH_SETTINGS;end",display:"intent:#Intent;action=android.settings.DISPLAY_SETTINGS;end",alarm:"intent:#Intent;action=android.intent.action.SHOW_ALARMS;end",clock:"intent:#Intent;action=android.intent.action.SHOW_ALARMS;end",phone:"tel:",dialer:"tel:",messages:"sms:",sms:"sms:",email:"mailto:"};
+const isAnd=/android/i.test(navigator.userAgent),pkgOk=p=>/^[A-Za-z]\w*(\.\w+)+$/.test(p||""),urlOk=u=>/^[a-z][a-z0-9+.-]*:\/\//i.test(u)&&!/^(javascript|data|vbscript|file)/i.test(u);
+const norm=s=>s.toLowerCase().replace(/[^a-z0-9. ]/g,"").replace(/\b(the|app|application)\b/g,"").replace(/\s+/g," ").trim();
+const intent=(p,w)=>"intent:#Intent;action=android.intent.action.MAIN;category=android.intent.category.LAUNCHER;package="+p+";S.browser_fallback_url="+encodeURIComponent(w||"https://play.google.com/store/apps/details?id="+p)+";end";
+function go(label,url,web){const href=(isAnd||!web)?url:web,d=document.createElement("div"),a=document.createElement("a");d.className="m a";a.className="applink";a.href=href;a.textContent="Open "+label;
+ if(/^https?:/.test(href))a.target="_blank";d.appendChild(a);$("#log").appendChild(d);$("#log").scrollTop=1e9;
+ try{if(/^https?:/.test(href))window.open(href,"_blank");else location.href=href}catch(e){}
+ log("open: "+label);return"Opening "+label+". If nothing happens, tap the button."}
+async function openApp(raw){const q=norm(raw);if(!q)return"Which app should I open?";
+ const w=raw.trim().toLowerCase().replace(/^\w+:\/\//,"");
+ if(/^[a-z0-9-]+(\.[a-z0-9-]+)*\.(com|in|org|net|io|co|app|dev|ai)(\/\S*)?$/.test(w))return go(w,"https://"+w,"https://"+w);
+ const c=S.apps.find(a=>norm(a.n)===q);if(c)return c.u?go(c.n,c.u,c.u):go(c.n,intent(c.p),"https://play.google.com/store/apps/details?id="+c.p);
+ if(SYS[q])return go(q,SYS[q]);
+ const a=APPS.find(x=>x.n.includes(q))||APPS.find(x=>x.n.some(n=>n.length>2&&q.length>2&&(q.startsWith(n)||n.startsWith(q))));
+ if(a)return go(a.n[0],intent(a.p,a.w),a.w);
+ try{const r=await fetch(API()+"/app",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({name:raw})}),j=await r.json();
+  if(pkgOk(j.package))return go(raw.trim(),intent(j.package,j.web||""),j.web||"https://play.google.com/store/apps/details?id="+j.package)}catch(e){}
+ return go(raw.trim()+" (search)","https://play.google.com/store/search?q="+encodeURIComponent(raw)+"&c=apps","https://www.google.com/search?q="+encodeURIComponent(raw))+" I couldn't find that app, so I'm searching for it."}
+
 /* SKILLS */
 async function weather(){try{const p=await new Promise((ok,no)=>navigator.geolocation.getCurrentPosition(ok,no,{timeout:8000}));
  const r=await fetch("https://api.open-meteo.com/v1/forecast?latitude="+p.coords.latitude+"&longitude="+p.coords.longitude+"&current_weather=true"),c=(await r.json()).current_weather;
@@ -180,7 +254,10 @@ function local(q){const l=q.toLowerCase().trim();let m;
  if(m=l.match(/^remember (?:that )?(.+)/)){S.mem.push(q.replace(/^remember (that )?/i,""));memT=Date.now()+2500;save();panel();return"Saved to memory."}
  if(/^forget (all|everything)/.test(l)){S.mem=[];save();panel();return"Memory cleared."}
  if(/what do you (remember|know about me)/.test(l))return S.mem.length?"I remember: "+S.mem.join("; "):"My memory is empty.";
- if(m=l.match(/^open (youtube|google|maps|whatsapp)/)){window.open({youtube:"https://www.youtube.com",google:"https://www.google.com",maps:"https://maps.google.com",whatsapp:"https://web.whatsapp.com"}[m[1]],"_blank");return"Opening "+m[1]+"."}
+ if(m=q.match(/^add app (.+?) (?:package|pkg) ([\w.]+)$/i)){if(!pkgOk(m[2]))return"That package name looks invalid.";S.apps.push({n:m[1].toLowerCase(),p:m[2]});save();panel();return"Added app "+m[1]+"."}
+ if(m=q.match(/^add app (.+?) (?:link|url) (\S+)$/i)){if(!urlOk(m[2]))return"That link looks invalid.";S.apps.push({n:m[1].toLowerCase(),u:m[2]});save();panel();return"Added app "+m[1]+"."}
+ if(m=q.match(/^call (\+?[\d ]{6,15})$/i))return go("call "+m[1].trim(),"tel:"+m[1].replace(/ /g,""));
+ if(m=l.match(/^(?:open|launch)\s+(.+)/))return openApp(m[1]);
  if(m=l.match(/^search (?:for )?(.+)/)){window.open("https://www.google.com/search?q="+encodeURIComponent(m[1]),"_blank");return"Searching for "+m[1]+"."}
  if(m=l.match(/^theme (red|brown|gold|green|blue)/)){accent({red:"#9e1b32",brown:"#6b3a2a",gold:"#b8860b",green:"#2f5d4a",blue:"#3d4f73"}[m[1]]);save();panel();return"Theme changed."}
  return null}
