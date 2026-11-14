@@ -173,4 +173,39 @@ function local(q){const l=q.toLowerCase().trim();let m;
  if(/^(clear|reset) chat/.test(l)){clearChat();return"Chat cleared."}
  if(/\btime\b/.test(l)&&l.length<30)return"It is "+new Date().toLocaleTimeString()+".";
  if(/\b(date|day)\b/.test(l)&&l.length<30)return"Today is "+new Date().toLocaleDateString(undefined,{weekday:"long",year:"numeric",month:"long",day:"numeric"})+".";
- if(m=l.match(/timer (?:
+ if(m=l.match(/timer (?:for )?(\d+)\s*(sec|min|hour)/)){const n=+m[1],ms=n*(m[2]==="hour"?3600000:m[2]==="min"?60000:1000);
+  setTimeout(()=>{const t="Timer finished: "+n+" "+m[2];bubble("a",t);speak(t);log(t)},ms);return"Timer started: "+n+" "+m[2]+"."}
+ if((m=l.match(/^(?:calc(?:ulate)?|what(?:'s| is))?\s*([\d.\s+\-*/()%^x]+)$/))&&/\d\s*[+\-*/x^%]\s*\d/.test(l)){try{const v=Function('"use strict";return ('+m[1].replace(/x/g,"*").replace(/\^/g,"**")+")")();return"= "+(+v.toFixed(6))}catch(e){}}
+ if(/weather|temperature/.test(l))return weather();
+ if(m=l.match(/^remember (?:that )?(.+)/)){S.mem.push(q.replace(/^remember (that )?/i,""));memT=Date.now()+2500;save();panel();return"Saved to memory."}
+ if(/^forget (all|everything)/.test(l)){S.mem=[];save();panel();return"Memory cleared."}
+ if(/what do you (remember|know about me)/.test(l))return S.mem.length?"I remember: "+S.mem.join("; "):"My memory is empty.";
+ if(m=l.match(/^open (youtube|google|maps|whatsapp)/)){window.open({youtube:"https://www.youtube.com",google:"https://www.google.com",maps:"https://maps.google.com",whatsapp:"https://web.whatsapp.com"}[m[1]],"_blank");return"Opening "+m[1]+"."}
+ if(m=l.match(/^search (?:for )?(.+)/)){window.open("https://www.google.com/search?q="+encodeURIComponent(m[1]),"_blank");return"Searching for "+m[1]+"."}
+ if(m=l.match(/^theme (red|brown|gold|green|blue)/)){accent({red:"#9e1b32",brown:"#6b3a2a",gold:"#b8860b",green:"#2f5d4a",blue:"#3d4f73"}[m[1]]);save();panel();return"Theme changed."}
+ return null}
+
+/* CHAT */
+function bubble(role,text,cls){const d=document.createElement("div");d.className="m "+(role==="u"?"u":"a")+(cls?" "+cls:"");d.innerHTML=md(text);$("#log").appendChild(d);$("#log").scrollTop=1e9;return d}
+function clearChat(){S.hist=[];save();$("#log").innerHTML="";log("chat cleared")}
+async function ping(){try{const r=await fetch(API()+"/health",{cache:"no-store"});online=r.ok}catch(e){online=false}}
+async function brain(q){const r=await local(q);if(r)return r;
+ const h=S.hist.slice(-10);while(h.length&&h[0].role!=="user")h.shift();const t=performance.now();
+ try{const res=await fetch(API()+"/chat",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({messages:h,memory:S.mem})});
+  const j=await res.json();lats.push(performance.now()-t);if(lats.length>20)lats.shift();online=res.ok;return j.text||j.error||"No reply."}
+ catch(e){online=false;return"I can't reach my server. Open this page from your Render link, or set the server link in Settings."}}
+async function send(text){text=(text||$("#inp").value).trim();if(!text||busy)return;$("#inp").value="";
+ bubble("u",text);S.hist.push({role:"user",content:text});busy=true;msgs++;rip.push({x:Math.random(),y:Math.random(),r:0});
+ setMode("think","THINKING");const sp=bubble("a","…","typing");log("query: "+text.slice(0,28));
+ const ans=await brain(text);sp.classList.remove("typing");sp.innerHTML=md(ans);S.hist.push({role:"assistant",content:ans});save();
+ busy=false;setMode("idle","STANDBY");speak(ans)}
+$("#send").onclick=()=>send();$("#inp").addEventListener("keydown",e=>{if(e.key==="Enter")send()});
+$("#term").onclick=()=>{if(window.speechSynthesis)speechSynthesis.cancel();if(rec)rec.stop();if(S.wake){wake(false);panel()}setMode("idle","TERMINATED");log("terminated");setTimeout(()=>{if(mode==="idle")setMode("idle","STANDBY")},1500)};
+addEventListener("keydown",e=>{if(e.key==="Escape")$("#term").click()});
+["time","weather","timer 1 minute","calculate 12*8+3","tell me a joke","what do you remember"].forEach(c=>{const b=document.createElement("button");b.className="chip";b.textContent=c;b.onclick=()=>send(c);$("#chips").appendChild(b)});
+
+/* PWA + BOOT */
+try{const l=document.createElement("link");l.rel="manifest";l.href=URL.createObjectURL(new Blob([JSON.stringify({name:"JARVIS",short_name:"JARVIS",display:"standalone",start_url:".",background_color:"#efd2ab",theme_color:"#efd2ab"})],{type:"application/json"}));document.head.appendChild(l)}catch(e){}
+S.hist.forEach(h=>bubble(h.role==="user"?"u":"a",h.content));bubble("a","Systems online. Type, tap the mic, or turn on the wake word in Settings.");
+panel("memory");ping();setInterval(ping,20000);log("boot complete");
+</script></body></html>
