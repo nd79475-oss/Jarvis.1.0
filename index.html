@@ -16,9 +16,9 @@ canvas{display:block}#left{gap:8px;overflow:auto}
 #orbbox{position:relative;padding:0;overflow:hidden;background:radial-gradient(circle at 50% 45%,#fff3e2,#f0d3ab 80%)}#cv{position:absolute;inset:0;width:100%;height:100%}
 #lines{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
 #lines path{fill:none;stroke:var(--acc);stroke-width:1;opacity:.35}#lines path.on{opacity:1;stroke-width:1.8}
-#nodes{position:absolute;left:14px;top:14px;display:flex;flex-direction:column;gap:9px}
+#nodes{position:absolute;left:14px;top:14px;display:flex;flex-direction:column;gap:6px}
 button{font-family:inherit}
-.node{border:1px solid var(--acc);color:var(--tx);background:#fff1deee;border-radius:3px;padding:8px 16px;font-size:11px;font-weight:600;letter-spacing:.22em;cursor:pointer;text-align:left;transition:.15s;min-width:118px}
+.node{border:1px solid var(--acc);color:var(--tx);background:#fff1deee;border-radius:3px;padding:6px 12px;font-size:10px;font-weight:600;letter-spacing:.22em;cursor:pointer;text-align:left;transition:.15s;min-width:104px}
 .node:hover{background:#9e1b3233;box-shadow:0 0 12px #9e1b3255}.node:active{transform:scale(.97)}
 .node.on{background:var(--acc);color:#fff1de;box-shadow:0 0 16px #9e1b3288}
 #term{position:absolute;top:14px;right:14px;border:1px solid var(--red);color:#9e1b32;background:#fff1deee;border-radius:3px;padding:8px 16px;font-size:11px;font-weight:600;letter-spacing:.22em;cursor:pointer;transition:.15s}
@@ -44,18 +44,22 @@ select option{background:#fff1de}input[type=range]{accent-color:var(--acc)}input
 #inp{flex:1;min-width:0;background:#fff3e2;border:1px solid var(--ln);color:var(--tx);border-radius:3px;padding:11px;font:inherit}
 .btn{background:var(--acc);color:#fff1de;border:1px solid var(--acc);border-radius:3px;padding:0 15px;font-size:16px;font-weight:700;cursor:pointer;transition:.15s}
 .btn:hover{filter:brightness(1.15);box-shadow:0 0 12px #9e1b3288}.btn:active{transform:scale(.96)}
+#vm{position:absolute;right:14px;bottom:14px;border:1px solid var(--acc);color:var(--tx);background:#fff1deee;border-radius:3px;padding:7px 14px;font-size:10px;font-weight:600;letter-spacing:.22em;cursor:pointer;transition:.15s}
+#vm:hover{background:var(--acc);color:#fff1de}
+#cap{position:absolute;left:50%;transform:translateX(-50%);bottom:84px;width:min(90%,640px);text-align:center;font-size:16px;max-height:28%;overflow:auto;display:none}
+#orbbox.full{position:fixed;inset:0;z-index:50;border-radius:0;height:auto!important}#orbbox.full #nodes,#orbbox.full #lines,#orbbox.full #vm{display:none}#orbbox.full #cap{display:block}
 .applink{display:inline-block;border:1px solid var(--acc);color:var(--acc);padding:6px 12px;border-radius:3px;text-decoration:none;font-size:11px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;transition:.15s}
 .applink:hover{background:var(--acc);color:#fff1de}
 #mic.rec{background:var(--red);border-color:var(--red);color:#fff}
-@media(max-width:900px){body{display:flex;flex-direction:column;overflow:auto;height:auto;min-height:100%}
-#center{display:flex;flex-direction:column;flex:none}#orbbox{height:300px;flex:none}#panel{height:250px;flex:none}#chat{height:75vh;flex:none}#left{flex:none;height:auto;order:3}}
+@media(max-width:900px){#lines{display:none}body{display:flex;flex-direction:column;overflow:auto;height:auto;min-height:100%}
+#center{display:flex;flex-direction:column;flex:none}#orbbox{height:350px;flex:none}#panel{height:250px;flex:none}#chat{height:75vh;flex:none}#left{flex:none;height:auto;order:3}}
 </style></head><body>
 <div class="card" id="left"><h3>Global map</h3><canvas id="map"></canvas><h3>Agent office</h3><canvas id="off"></canvas><h3>System feed</h3><div id="feed"></div></div>
 
 <div id="center">
  <div class="card" id="orbbox"><canvas id="cv"></canvas><svg id="lines"></svg>
-  <div id="nodes"><button class="node on" data-k="memory">MEMORY</button><button class="node" data-k="skills">SKILLS</button><button class="node" data-k="apps">APPS</button><button class="node" data-k="monitor">MONITOR</button><button class="node" data-k="settings">SETTINGS</button></div>
-  <button id="term">TERMINATE</button><div id="status">STANDBY</div><canvas id="wv" width="220" height="28"></canvas></div>
+  <div id="nodes"><button class="node on" data-k="memory">MEMORY</button><button class="node" data-k="skills">SKILLS</button><button class="node" data-k="apps">APPS</button><button class="node" data-k="people">PEOPLE</button><button class="node" data-k="remind">REMIND</button><button class="node" data-k="monitor">MONITOR</button><button class="node" data-k="settings">SETTINGS</button></div>
+  <button id="vm">VOICE MODE</button><div id="cap"></div><button id="term">TERMINATE</button><div id="status">STANDBY</div><canvas id="wv" width="220" height="28"></canvas></div>
  <div class="card" id="panel"><div id="pbody"></div></div>
 </div>
 
@@ -65,10 +69,10 @@ select option{background:#fff1de}input[type=range]{accent-color:var(--acc)}input
 <script>
 const $=s=>document.querySelector(s),$$=s=>document.querySelectorAll(s);
 const LS=(k,v)=>{try{if(v===undefined)return JSON.parse(localStorage.getItem(k));localStorage.setItem(k,JSON.stringify(v))}catch(e){return null}};
-const S=Object.assign({mem:[],hist:[],voice:true,wake:false,rate:1,pitch:1,acc:"#9e1b32",lang:"en-IN",vname:"",api:"",apps:[]},LS("jv2")||{});S.wake=false;if(S.acc==="#19e6c1"||S.acc==="#9e1b32")S.acc="#9e1b32";
-const save=()=>LS("jv2",{mem:S.mem,hist:S.hist.slice(-40),voice:S.voice,rate:S.rate,pitch:S.pitch,acc:S.acc,lang:S.lang,vname:S.vname,api:S.api,apps:S.apps});
+const S=Object.assign({mem:[],hist:[],voice:true,wake:false,rate:1,pitch:1,acc:"#9e1b32",lang:"en-IN",vname:"",api:"",apps:[],contacts:[],rem:[],web:true,cc:"91"},LS("jv2")||{});S.wake=false;if(S.acc==="#19e6c1"||S.acc==="#9e1b32")S.acc="#9e1b32";
+const save=()=>LS("jv2",{mem:S.mem,hist:S.hist.slice(-40),voice:S.voice,rate:S.rate,pitch:S.pitch,acc:S.acc,lang:S.lang,vname:S.vname,api:S.api,apps:S.apps,contacts:S.contacts,rem:S.rem,web:S.web,cc:S.cc});
 const API=()=>S.api||(location.protocol.startsWith("http")?location.origin:"http://localhost:5000");
-let rgb=[201,164,92],mode="idle",busy=false,speaking=false,msgs=0,online=null,lats=[],memT=0,cur="memory",t0=Date.now(),speed=.004;
+let vm=false,wl=null,CX=0,rgb=[201,164,92],mode="idle",busy=false,speaking=false,msgs=0,online=null,lats=[],memT=0,cur="memory",t0=Date.now(),speed=.004;
 function accent(h){S.acc=h;document.documentElement.style.setProperty("--acc",h);rgb=[1,3,5].map(i=>parseInt(h.substr(i,2),16))}accent(S.acc);
 const esc=t=>t.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
 const md=t=>esc(t).replace(/\*\*(.+?)\*\*/g,"<b>$1</b>").replace(/`([^`]+)`/g,"<code>$1</code>").replace(/\n/g,"<br>");
@@ -84,9 +88,9 @@ const D2R=Math.PI/180;
 function sp3(lat,lon,r,ry,tl){const cl=Math.cos(lat),x=cl*Math.sin(lon),y=Math.sin(lat),z=cl*Math.cos(lon);
  const x1=x*Math.cos(ry)+z*Math.sin(ry),z1=-x*Math.sin(ry)+z*Math.cos(ry);return[x1*r,(y*Math.cos(tl)-z1*Math.sin(tl))*r,(y*Math.sin(tl)+z1*Math.cos(tl))*r]}
 function rp(r,a,b,t){const x=Math.cos(t)*r,y=Math.sin(t)*r,y1=y*Math.cos(a),z1=y*Math.sin(a);return[x*Math.cos(b)-y1*Math.sin(b),x*Math.sin(b)+y1*Math.cos(b),z1]}
-function seg(a,b,col,aF,aB,w){cx.strokeStyle="rgba("+col+","+((a[2]+b[2])>=0?aF:aB)+")";cx.lineWidth=w;cx.beginPath();cx.moveTo(W/2+a[0],H/2-a[1]);cx.lineTo(W/2+b[0],H/2-b[1]);cx.stroke()}
+function seg(a,b,col,aF,aB,w){cx.strokeStyle="rgba("+col+","+((a[2]+b[2])>=0?aF:aB)+")";cx.lineWidth=w;cx.beginPath();cx.moveTo(CX+a[0],H/2-a[1]);cx.lineTo(CX+b[0],H/2-b[1]);cx.stroke()}
 (function draw(){const T=Date.now(),lvl=mode==="idle"?0:.5+.5*Math.sin(T/(mode==="think"?110:190));rot+=speed*.5;cx.clearRect(0,0,W,H);
- const R=Math.min(W,H)*.25,col=rgb.join(","),tl=.4,dp=devicePixelRatio,cxm=W/2,cym=H/2;
+ const mob=innerWidth<=900&&!vm,R=Math.min(W,H)*(mob?.2:.25),col=rgb.join(","),tl=.4,dp=devicePixelRatio,cxm=W/2+(mob?W*.14:0),cym=H/2;CX=cxm;
  const g=cx.createRadialGradient(cxm,cym,R*.5,cxm,cym,R*2);g.addColorStop(0,"rgba("+col+","+(.10+.12*lvl)+")");g.addColorStop(1,"rgba("+col+",0)");cx.fillStyle=g;cx.fillRect(0,0,W,H);
  const bd=cx.createRadialGradient(cxm-R*.35,cym-R*.35,R*.1,cxm,cym,R);bd.addColorStop(0,"#fff6e8");bd.addColorStop(1,"#e7c79c");
  cx.fillStyle=bd;cx.beginPath();cx.arc(cxm,cym,R,0,6.283);cx.fill();
@@ -126,21 +130,29 @@ function panel(k){cur=k||cur;$$(".node").forEach(n=>n.classList.toggle("on",n.da
  if(cur==="memory"){p.innerHTML='<h3>Memory</h3>'+(S.mem.length?S.mem.map((m,i)=>'<div class="mem"><span>'+esc(m)+'</span><b data-i="'+i+'">✕</b></div>').join(""):'<div style="color:var(--dm)">Empty. Say: remember that I like cricket</div>')+'<div class="row"><input id="mi" placeholder="Add a memory..."><button class="sm" id="ma">ADD</button></div>';
   p.querySelectorAll("b").forEach(b=>b.onclick=()=>{S.mem.splice(+b.dataset.i,1);save();panel()});
   $("#ma").onclick=()=>{const v=$("#mi").value.trim();if(v){S.mem.push(v);memT=Date.now()+2500;save();panel()}}}
+
+ if(cur==="people"){p.innerHTML='<h3>People</h3><div style="color:var(--dm);margin-bottom:6px">Say: message mom hello · whatsapp dad hi · sms sister hi · call mom</div>'+(S.contacts.length?S.contacts.map((c,i)=>'<div class="mem"><span>'+esc(c.n)+' <small style="color:var(--dm)">'+esc(c.t)+'</small></span><b data-i="'+i+'">✕</b></div>').join(""):'<div style="color:var(--dm)">No contacts yet.</div>')+'<div class="row"><input id="cn" placeholder="Name (mom)"><input id="ct" placeholder="Number"><button class="sm" id="ca">ADD</button></div>'+((navigator.contacts&&window.ContactsManager)?'<div class="row"><button class="sm" id="cp">PICK FROM PHONE</button></div>':"");
+  p.querySelectorAll("b").forEach(b=>b.onclick=()=>{S.contacts.splice(+b.dataset.i,1);save();panel()});
+  $("#ca").onclick=()=>{const n=$("#cn").value.trim().toLowerCase(),t=$("#ct").value.replace(/[^\d+]/g,"");if(n&&t.length>=7){S.contacts.push({n,t});save();panel()}};
+  if($("#cp"))$("#cp").onclick=async()=>{try{const r=await navigator.contacts.select(["name","tel"],{multiple:true});r.forEach(c=>{if(c.name[0]&&c.tel[0])S.contacts.push({n:c.name[0].toLowerCase(),t:c.tel[0].replace(/[^\d+]/g,"")})});save();panel()}catch(e){}}}
+ if(cur==="remind"){const L=S.rem.filter(r=>!r.done).sort((a,b)=>a.t-b.t);p.innerHTML='<h3>Reminders</h3><div style="color:var(--dm);margin-bottom:6px">Say: remind me to call mom at 5 pm · remind me in 20 minutes to drink water</div>'+(L.length?L.map(r=>'<div class="mem"><span>'+esc(r.w)+' <small style="color:var(--dm)">'+new Date(r.t).toLocaleString()+'</small></span><b data-id="'+r.id+'">✕</b></div>').join(""):'<div style="color:var(--dm)">No upcoming reminders.</div>')+((window.Notification&&Notification.permission!=="granted")?'<div class="row"><button class="sm" id="rn">ENABLE NOTIFICATIONS</button></div>':"");
+  p.querySelectorAll("b").forEach(b=>b.onclick=()=>{S.rem=S.rem.filter(r=>String(r.id)!==b.dataset.id);save();panel()});
+  if($("#rn"))$("#rn").onclick=()=>Notification.requestPermission().then(()=>panel())}
  if(cur==="apps"){p.innerHTML='<h3>Apps</h3><div style="color:var(--dm);margin-bottom:6px">Say: open <i>any app</i>. Or add your own below.</div><div id="qa" style="display:flex;flex-wrap:wrap;gap:6px"></div><h3 style="margin-top:12px">My apps</h3>'+(S.apps.length?S.apps.map((a,i)=>'<div class="mem"><span>'+esc(a.n)+' <small style="color:var(--dm)">'+esc(a.p||a.u)+'</small></span><b data-i="'+i+'">✕</b></div>').join(""):'<div style="color:var(--dm)">None yet.</div>')+'<div class="row"><input id="an" placeholder="App name"><input id="ap" placeholder="package or https link"><button class="sm" id="aa">ADD</button></div>';
   ["whatsapp","youtube","instagram","gmail","maps","camera","settings","spotify","phonepe","amazon","chrome","zomato"].forEach(n=>{const b=document.createElement("button");b.className="chip";b.textContent=n;b.onclick=async()=>{bubble("a",await openApp(n))};$("#qa").appendChild(b)});
   p.querySelectorAll("b").forEach(b=>b.onclick=()=>{S.apps.splice(+b.dataset.i,1);save();panel()});
   $("#aa").onclick=()=>{const n=$("#an").value.trim().toLowerCase(),v=$("#ap").value.trim();if(!n||!v)return;if(pkgOk(v))S.apps.push({n,p:v});else if(urlOk(v))S.apps.push({n,u:v});else return log("invalid package or link");save();panel()}}
- if(cur==="skills")p.innerHTML='<h3>Skills</h3>• <b>time</b> / <b>date</b><br>• <b>weather</b> (allow location)<br>• <b>timer 5 minutes</b><br>• <b>calculate 12*8+3</b><br>• <b>remember …</b> / <b>what do you remember</b> / <b>forget all</b><br>• <b>open any app</b> (open whatsapp, open camera, open zomato…)<br>• <b>add app NAME package com.x.y</b> or <b>link https://…</b><br>• <b>call 9876543210</b><br>• <b>search for …</b><br>• <b>theme red / brown / gold / green / blue</b><br>• <b>clear chat</b><br>• anything else → AI brain<br>• Wake word: turn on in Settings, then say “Jarvis …”';
+ if(cur==="skills")p.innerHTML='<h3>Skills</h3>• <b>time</b> / <b>date</b><br>• <b>weather</b> (allow location)<br>• <b>timer 5 minutes</b><br>• <b>calculate 12*8+3</b><br>• <b>remember …</b> / <b>what do you remember</b> / <b>forget all</b><br>• <b>open any app</b> (open whatsapp, open camera, open zomato…)<br>• <b>add app NAME package com.x.y</b> or <b>link https://…</b><br>• <b>call 9876543210</b><br>• <b>search for …</b> (live web answer) · <b>google …</b> (opens browser)<br>• <b>theme red / brown / gold / green / blue</b><br>• <b>message mom hello</b> · <b>sms mom hi</b> · <b>call mom</b><br>• <b>remind me to … at 5 pm</b><br>• <b>clear chat</b><br>• anything else → AI brain<br>• Wake word: turn on in Settings, then say “Jarvis …”';
  if(cur==="monitor"){const al=lats.length?Math.round(lats.reduce((a,b)=>a+b,0)/lats.length):0,u=Math.floor((Date.now()-t0)/1000);
   p.innerHTML='<h3>Monitor</h3><div class="row"><span>Backend</span>'+(online===null?"checking…":online?'<b style="color:#2f7a4f">ONLINE</b>':'<b style="color:var(--red)">OFFLINE</b>')+'</div><div class="row"><span>Latency</span>'+al+' ms avg</div><div class="row"><span>Messages</span>'+msgs+'</div><div class="row"><span>Memory</span>'+S.mem.length+' items</div><div class="row"><span>Uptime</span>'+Math.floor(u/60)+"m "+u%60+'s</div><div class="row"><span>Voice in</span>'+(SR?"supported":"needs Chrome")+'</div><div class="row"><span>Server</span>'+esc(API())+'</div>'}
  if(cur==="settings")settingsUI(p)}
 function fillVoices(){const s=$("#vs");if(!s||!window.speechSynthesis)return;s.innerHTML='<option value="">Default</option>'+speechSynthesis.getVoices().map(v=>'<option value="'+esc(v.name)+'"'+(v.name===S.vname?" selected":"")+'>'+esc(v.name)+" ("+v.lang+")</option>").join("")}
-function settingsUI(p){p.innerHTML='<h3>Settings</h3><label><input type="checkbox" id="sv" '+(S.voice?"checked":"")+'> Speak replies</label><label><input type="checkbox" id="sw" '+(S.wake?"checked":"")+'> Wake word “Jarvis”</label>'+
+function settingsUI(p){p.innerHTML='<h3>Settings</h3><label><input type="checkbox" id="sv" '+(S.voice?"checked":"")+'> Speak replies</label><label><input type="checkbox" id="sw" '+(S.wake?"checked":"")+'> Wake word “Jarvis”</label><label><input type="checkbox" id="sq" '+(S.web?"checked":"")+'> Live web search</label>'+
  '<div class="row"><span>Voice</span><select id="vs"></select></div><div class="row"><span>Speed</span><input type="range" id="sr" min=".6" max="1.6" step=".1" value="'+S.rate+'"><span style="min-width:0">Pitch</span><input type="range" id="sp" min=".5" max="1.5" step=".1" value="'+S.pitch+'"></div>'+
  '<div class="row"><span>Language</span><select id="sl">'+[["en-IN","English (India)"],["en-US","English (US)"],["en-GB","English (UK)"],["hi-IN","Hindi"]].map(l=>'<option value="'+l[0]+'"'+(l[0]===S.lang?" selected":"")+">"+l[1]+"</option>").join("")+'</select></div>'+
  '<div class="row"><span>Color</span>'+SW.map(c=>'<div class="sw'+(c===S.acc?" on":"")+'" data-c="'+c+'" style="background:'+c+'"></div>').join("")+'</div>'+
- '<div class="row"><span>Server</span><input id="sb" placeholder="same server (default)" value="'+esc(S.api)+'"></div><div class="row"><button class="sm" id="tv">TEST VOICE</button><button class="sm" id="ex">EXPORT CHAT</button><button class="sm" id="cl">CLEAR CHAT</button></div>';
- fillVoices();$("#sv").onchange=e=>{S.voice=e.target.checked;save()};$("#sw").onchange=e=>wake(e.target.checked);
+ '<div class="row"><span>Country code</span><input id="cc" value="'+esc(S.cc)+'"></div><div class="row"><span>Server</span><input id="sb" placeholder="same server (default)" value="'+esc(S.api)+'"></div><div class="row"><button class="sm" id="tv">TEST VOICE</button><button class="sm" id="ex">EXPORT CHAT</button><button class="sm" id="cl">CLEAR CHAT</button></div>';
+ fillVoices();$("#sv").onchange=e=>{S.voice=e.target.checked;save()};$("#sq").onchange=e=>{S.web=e.target.checked;save()};$("#cc").onchange=e=>{S.cc=e.target.value.replace(/\D/g,"")||"91";save()};$("#sw").onchange=e=>wake(e.target.checked);
  $("#vs").onchange=e=>{S.vname=e.target.value;save()};$("#sr").oninput=e=>{S.rate=+e.target.value;save()};$("#sp").oninput=e=>{S.pitch=+e.target.value;save()};
  $("#sl").onchange=e=>{S.lang=e.target.value;save()};p.querySelectorAll(".sw").forEach(s=>s.onclick=()=>{accent(s.dataset.c);save();panel()});
  $("#sb").onchange=e=>{S.api=e.target.value.trim().replace(/\/$/,"");save();ping();log("server saved")};
@@ -154,14 +166,14 @@ setInterval(()=>{if(cur==="monitor")panel()},2000);
 function speak(t,force){if((!S.voice&&!force)||!window.speechSynthesis)return;speechSynthesis.cancel();
  const u=new SpeechSynthesisUtterance(t.replace(/[*`#]/g,""));u.rate=S.rate;u.pitch=S.pitch;u.lang=S.lang;
  const v=speechSynthesis.getVoices().find(v=>v.name===S.vname);if(v)u.voice=v;
- u.onstart=()=>{speaking=true;setMode("speak","SPEAKING")};u.onend=u.onerror=()=>{speaking=false;if(!busy)setMode("idle","STANDBY")};speechSynthesis.speak(u)}
+ u.onstart=()=>{speaking=true;setMode("speak","SPEAKING")};u.onend=u.onerror=()=>{speaking=false;if(!busy){setMode("idle","STANDBY");if(vm)setTimeout(vmListen,400)}};speechSynthesis.speak(u)}
 
 /* VOICE IN */
 const SR=window.SpeechRecognition||window.webkitSpeechRecognition;let rec=null,wk=null,awaiting=false;
 $("#mic").onclick=()=>{if(!SR)return bubble("a","Voice input needs Chrome.");if(rec){rec.stop();return}
  rec=new SR();rec.lang=S.lang;rec.onstart=()=>{$("#mic").classList.add("rec");setMode("listen","LISTENING")};
- rec.onresult=e=>send(e.results[0][0].transcript);
- rec.onend=()=>{rec=null;$("#mic").classList.remove("rec");if(!busy&&!speaking)setMode("idle","STANDBY")};rec.start()};
+ rec.onresult=e=>{const t=e.results[0][0].transcript;if(vm)$("#cap").textContent="You: "+t;send(t)};rec.onerror=e=>{if(/not-allowed|service-not-allowed/.test(e.error)){voiceMode(false);bubble("a","Mic permission is blocked in this browser.")}};
+ rec.onend=()=>{rec=null;$("#mic").classList.remove("rec");if(!busy&&!speaking){setMode("idle","STANDBY");if(vm)setTimeout(vmListen,400)}};rec.start()};
 function wake(on){S.wake=on;if(!on){if(wk){wk.onend=null;wk.stop();wk=null}log("wake word off");return}
  if(!SR){S.wake=false;panel();return bubble("a","Wake word needs Chrome.")}
  const run=()=>{if(!S.wake)return;wk=new SR();wk.lang=S.lang;wk.continuous=true;
@@ -239,12 +251,54 @@ async function openApp(raw){const q=norm(raw);if(!q)return"Which app should I op
   if(pkgOk(j.package))return go(raw.trim(),intent(j.package,j.web||""),j.web||"https://play.google.com/store/apps/details?id="+j.package)}catch(e){}
  return go(raw.trim()+" (search)","https://play.google.com/store/search?q="+encodeURIComponent(raw)+"&c=apps","https://www.google.com/search?q="+encodeURIComponent(raw))+" I couldn't find that app, so I'm searching for it."}
 
+/* VOICE MODE */
+function vmListen(){if(vm&&!busy&&!speaking&&!rec)$("#mic").click()}
+async function voiceMode(on){if(on&&!SR){bubble("a","Voice mode needs Chrome.");return}
+ vm=on;$("#orbbox").classList.toggle("full",on);$("#term").textContent=on?"EXIT":"TERMINATE";$("#cap").textContent=on?"Say something…":"";
+ setTimeout(()=>{rs();lines()},60);
+ try{if(on&&navigator.wakeLock)wl=await navigator.wakeLock.request("screen");else if(wl){wl.release();wl=null}}catch(e){}
+ if(on)vmListen();else{if(rec)rec.stop();if(window.speechSynthesis)speechSynthesis.cancel();setMode("idle","STANDBY")}}
+$("#vm").onclick=()=>voiceMode(true);
+
+/* CONTACTS + MESSAGES */
+const digits=t=>t.replace(/[^\d]/g,"");
+function fullNum(t){const d=digits(t);if(t.trim().startsWith("+"))return d;if(d.length===10)return S.cc+d;if(d.startsWith("0"))return S.cc+d.slice(1);return d}
+function findContact(rest){const l=rest.toLowerCase().trim();for(const c of [...S.contacts].sort((a,b)=>b.n.length-a.n.length)){if(l===c.n||l.startsWith(c.n+" "))return{c,msg:rest.trim().slice(c.n.length).trim()}}
+ const m=l.match(/^(\+?[\d ]{7,15})\s*(.*)$/);return m?{c:{n:m[1].trim(),t:m[1]},msg:rest.trim().slice(m[1].length).trim()}:null}
+function sendMsg(via,rest){const f=findContact(rest.replace(/^to\s+/i,""));if(!f)return"I don't have that contact. Say: add contact mom 9876543210";
+ const msg=f.msg.replace(/^(saying|say|that|:)\s*/i,""),n=fullNum(f.c.t),q=msg?encodeURIComponent(msg):"";
+ if(via==="sms")return go("sms "+f.c.n,"sms:+"+n+(q?"?body="+q:""));
+ const u="https://wa.me/"+n+(q?"?text="+q:"");return go("whatsapp "+f.c.n,u,u)}
+
+/* REMINDERS */
+function parseWhen(l){const now=new Date();let m;
+ if(m=l.match(/\bin (\d+|an?|half an?)\s*(min|minute|hour|hr|day)s?\b/)){const n=/^an?$/.test(m[1])?1:/half/.test(m[1])?.5:+m[1],u=m[2][0]==="m"?6e4:m[2][0]==="h"?36e5:864e5;return{d:new Date(now.getTime()+n*u),rest:l.replace(m[0]," ")}}
+ const tm=l.match(/\b(?:at\s+)?(\d{1,2})(?::(\d{2}))?\s*(am|pm)\b/)||l.match(/\bat\s+(\d{1,2})(?::(\d{2}))?\b/),day=/day after tomorrow/.test(l)?2:/tomorrow/.test(l)?1:0;
+ if(tm){let h=+tm[1];const mi=+(tm[2]||0),ap=tm[3];if(ap==="pm"&&h<12)h+=12;if(ap==="am"&&h===12)h=0;if(!ap&&h>=1&&h<=6)h+=12;
+  const d=new Date(now);d.setHours(h,mi,0,0);d.setDate(d.getDate()+day);if(d<=now&&!day)d.setDate(d.getDate()+1);return{d,rest:l.replace(tm[0]," ")}}
+ if(day){const d=new Date(now);d.setDate(d.getDate()+day);d.setHours(9,0,0,0);return{d,rest:l}}return null}
+function calLinks(r){const f=t=>new Date(t).toISOString().replace(/[-:]|\.\d{3}/g,""),s=f(r.t),e=f(r.t+9e5),d=document.createElement("div"),a=document.createElement("a"),b=document.createElement("a");
+ const ics="BEGIN:VCALENDAR\r\nVERSION:2.0\r\nBEGIN:VEVENT\r\nUID:"+r.id+"@jarvis\r\nDTSTAMP:"+f(Date.now())+"\r\nDTSTART:"+s+"\r\nDTEND:"+e+"\r\nSUMMARY:"+r.w.replace(/[\r\n,;]/g," ")+"\r\nBEGIN:VALARM\r\nACTION:DISPLAY\r\nDESCRIPTION:Reminder\r\nTRIGGER:PT0M\r\nEND:VALARM\r\nEND:VEVENT\r\nEND:VCALENDAR";
+ d.className="m a";a.className=b.className="applink";a.href="https://calendar.google.com/calendar/render?action=TEMPLATE&text="+encodeURIComponent(r.w)+"&dates="+s+"/"+e+"&details="+encodeURIComponent("Reminder from JARVIS");a.target="_blank";a.rel="noopener";a.textContent="Save to calendar";
+ b.style.marginLeft="6px";b.href=URL.createObjectURL(new Blob([ics],{type:"text/calendar"}));b.download="reminder.ics";b.textContent="Download .ics";d.append(a,b);$("#log").appendChild(d);$("#log").scrollTop=1e9}
+function setRem(l){const w=parseWhen(l);if(!w)return"When should I remind you? Try: remind me to call mom at 5 pm";
+ const what=w.rest.replace(/remind me|set (?:a )?reminder|\breminder\b|\b(?:today|tonight|tomorrow|day after tomorrow)\b|\bat\b/g," ").replace(/\s+/g," ").trim().replace(/^(to|about|that)\s+/,"").replace(/\s+(to|about)$/,"")||"reminder";
+ const r={id:Date.now(),t:w.d.getTime(),w:what,done:false};S.rem.push(r);save();panel();calLinks(r);
+ if(window.Notification&&Notification.permission==="default")try{Notification.requestPermission()}catch(e){}
+ return"Reminder set for "+w.d.toLocaleString([],{weekday:"short",hour:"numeric",minute:"2-digit"})+": "+what+". I'll alert you while this page is open. Tap Save to calendar for a phone alert even after you close it."}
+function fireRem(){const n=Date.now();S.rem.filter(r=>!r.done&&r.t<=n).forEach(r=>{r.done=true;const t="Reminder: "+r.w;bubble("a","⏰ "+t);speak(t,true);log(t);
+ try{if(Notification.permission==="granted")new Notification("JARVIS",{body:r.w})}catch(e){}try{navigator.vibrate&&navigator.vibrate([200,100,200])}catch(e){}save();if(cur==="remind")panel()});S.rem=S.rem.filter(r=>!r.done||n-r.t<864e5)}
+setInterval(fireRem,5000);
+
 /* SKILLS */
 async function weather(){try{const p=await new Promise((ok,no)=>navigator.geolocation.getCurrentPosition(ok,no,{timeout:8000}));
  const r=await fetch("https://api.open-meteo.com/v1/forecast?latitude="+p.coords.latitude+"&longitude="+p.coords.longitude+"&current_weather=true"),c=(await r.json()).current_weather;
  return"It is "+c.temperature+"°C with wind at "+c.windspeed+" km/h."}catch(e){return"I couldn't get the weather. Allow location access and try again."}}
 function local(q){const l=q.toLowerCase().trim();let m;
  if(/^(clear|reset) chat/.test(l)){clearChat();return"Chat cleared."}
+ if(/^(?:remind me|set (?:a )?reminder|reminder)\b/.test(l))return setRem(l);
+ if(/^(?:list|show|my) reminders?$/.test(l)){const L=S.rem.filter(r=>!r.done);return L.length?"Upcoming: "+L.map(r=>r.w+" at "+new Date(r.t).toLocaleString([],{weekday:"short",hour:"numeric",minute:"2-digit"})).join("; "):"No upcoming reminders."}
+ if(/^(?:clear|delete) (?:all )?reminders$/.test(l)){S.rem=[];save();panel();return"Reminders cleared."}
  if(/\btime\b/.test(l)&&l.length<30)return"It is "+new Date().toLocaleTimeString()+".";
  if(/\b(date|day)\b/.test(l)&&l.length<30)return"Today is "+new Date().toLocaleDateString(undefined,{weekday:"long",year:"numeric",month:"long",day:"numeric"})+".";
  if(m=l.match(/timer (?:for )?(\d+)\s*(sec|min|hour)/)){const n=+m[1],ms=n*(m[2]==="hour"?3600000:m[2]==="min"?60000:1000);
@@ -257,8 +311,14 @@ function local(q){const l=q.toLowerCase().trim();let m;
  if(m=q.match(/^add app (.+?) (?:package|pkg) ([\w.]+)$/i)){if(!pkgOk(m[2]))return"That package name looks invalid.";S.apps.push({n:m[1].toLowerCase(),p:m[2]});save();panel();return"Added app "+m[1]+"."}
  if(m=q.match(/^add app (.+?) (?:link|url) (\S+)$/i)){if(!urlOk(m[2]))return"That link looks invalid.";S.apps.push({n:m[1].toLowerCase(),u:m[2]});save();panel();return"Added app "+m[1]+"."}
  if(m=q.match(/^call (\+?[\d ]{6,15})$/i))return go("call "+m[1].trim(),"tel:"+m[1].replace(/ /g,""));
+ if(m=q.match(/^(?:add|save) contact (.+?) (\+?[\d ]{7,15})$/i)){S.contacts.push({n:m[1].toLowerCase(),t:m[2].trim()});save();panel();return"Saved contact "+m[1]+"."}
+ if(m=l.match(/^(?:delete|remove) contact (.+)/)){const k=m[1].trim(),b=S.contacts.length;S.contacts=S.contacts.filter(c=>c.n!==k);save();panel();return S.contacts.length<b?"Removed "+k+".":"No contact named "+k+"."}
+ if(m=q.match(/^call (.+)$/i)){const f=findContact(m[1]);if(f)return go("call "+f.c.n,"tel:+"+fullNum(f.c.t))}
+ if(m=q.match(/^sms (.+)$/i))return sendMsg("sms",m[1]);
+ if(m=q.match(/^(?:send (?:a )?(?:message|msg|text) to |message |msg |whatsapp |wa )(.+)$/i))return sendMsg("wa",m[1]);
+ if((m=q.match(/^text (.+)$/i))&&findContact(m[1]))return sendMsg("wa",m[1]);
  if(m=l.match(/^(?:open|launch)\s+(.+)/))return openApp(m[1]);
- if(m=l.match(/^search (?:for )?(.+)/)){window.open("https://www.google.com/search?q="+encodeURIComponent(m[1]),"_blank");return"Searching for "+m[1]+"."}
+ if(m=l.match(/^google (?:for )?(.+)/)){window.open("https://www.google.com/search?q="+encodeURIComponent(m[1]),"_blank");return"Searching for "+m[1]+"."}
  if(m=l.match(/^theme (red|brown|gold|green|blue)/)){accent({red:"#9e1b32",brown:"#6b3a2a",gold:"#b8860b",green:"#2f5d4a",blue:"#3d4f73"}[m[1]]);save();panel();return"Theme changed."}
  return null}
 
@@ -266,23 +326,28 @@ function local(q){const l=q.toLowerCase().trim();let m;
 function bubble(role,text,cls){const d=document.createElement("div");d.className="m "+(role==="u"?"u":"a")+(cls?" "+cls:"");d.innerHTML=md(text);$("#log").appendChild(d);$("#log").scrollTop=1e9;return d}
 function clearChat(){S.hist=[];save();$("#log").innerHTML="";log("chat cleared")}
 async function ping(){try{const r=await fetch(API()+"/health",{cache:"no-store"});online=r.ok}catch(e){online=false}}
-async function brain(q){const r=await local(q);if(r)return r;
- const h=S.hist.slice(-10);while(h.length&&h[0].role!=="user")h.shift();const t=performance.now();
- try{const res=await fetch(API()+"/chat",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({messages:h,memory:S.mem})});
-  const j=await res.json();lats.push(performance.now()-t);if(lats.length>20)lats.shift();online=res.ok;return j.text||j.error||"No reply."}
+let srcs=[];
+const WEBRX=/^(search|look up|find out)\b|\b(latest|news|today|tonight|yesterday|current|currently|score|scores|price|prices|trending|who won|release date|stock|live score|right now|this week|update on)\b|\bwho (is|are) (the )?(current|new)\b/;
+function addSrc(el){const L=srcs.filter(x=>/^https?:/.test(x.url));if(!L.length)return;const d=document.createElement("div");d.style.cssText="margin-top:6px;font-size:12px";
+ L.forEach((x,i)=>{const a=document.createElement("a");a.href=x.url;a.target="_blank";a.rel="noopener";a.textContent=(i+1)+". "+String(x.title||x.url).slice(0,50);a.style.cssText="display:block;color:var(--acc)";d.appendChild(a)});el.appendChild(d)}
+async function brain(q){srcs=[];const r=await local(q);if(r)return r;const web=S.web&&WEBRX.test(q.toLowerCase());
+ const h=S.hist.slice(-10);while(h.length&&h[0].role!=="user")h.shift();const t=performance.now();if(web)setMode("think","SEARCHING THE WEB");
+ try{const res=await fetch(API()+"/chat",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({messages:h,memory:S.mem,web})});
+  const j=await res.json();lats.push(performance.now()-t);if(lats.length>20)lats.shift();online=res.ok;srcs=j.sources||[];return j.text||j.error||"No reply."}
  catch(e){online=false;return"I can't reach my server. Open this page from your Render link, or set the server link in Settings."}}
 async function send(text){text=(text||$("#inp").value).trim();if(!text||busy)return;$("#inp").value="";
  bubble("u",text);S.hist.push({role:"user",content:text});busy=true;msgs++;rip.push({x:Math.random(),y:Math.random(),r:0});
  setMode("think","THINKING");const sp=bubble("a","…","typing");log("query: "+text.slice(0,28));
- const ans=await brain(text);sp.classList.remove("typing");sp.innerHTML=md(ans);S.hist.push({role:"assistant",content:ans});save();
- busy=false;setMode("idle","STANDBY");speak(ans)}
+ const ans=await brain(text);sp.classList.remove("typing");sp.innerHTML=md(ans);addSrc(sp);S.hist.push({role:"assistant",content:ans});save();
+ busy=false;setMode("idle","STANDBY");if(vm)$("#cap").textContent=ans;speak(ans,vm)}
 $("#send").onclick=()=>send();$("#inp").addEventListener("keydown",e=>{if(e.key==="Enter")send()});
-$("#term").onclick=()=>{if(window.speechSynthesis)speechSynthesis.cancel();if(rec)rec.stop();if(S.wake){wake(false);panel()}setMode("idle","TERMINATED");log("terminated");setTimeout(()=>{if(mode==="idle")setMode("idle","STANDBY")},1500)};
+$("#term").onclick=()=>{if(vm){voiceMode(false);return}if(window.speechSynthesis)speechSynthesis.cancel();if(rec)rec.stop();if(S.wake){wake(false);panel()}setMode("idle","TERMINATED");log("terminated");setTimeout(()=>{if(mode==="idle")setMode("idle","STANDBY")},1500)};
 addEventListener("keydown",e=>{if(e.key==="Escape")$("#term").click()});
 ["time","weather","timer 1 minute","calculate 12*8+3","tell me a joke","what do you remember"].forEach(c=>{const b=document.createElement("button");b.className="chip";b.textContent=c;b.onclick=()=>send(c);$("#chips").appendChild(b)});
 
 /* PWA + BOOT */
 try{const l=document.createElement("link");l.rel="manifest";l.href=URL.createObjectURL(new Blob([JSON.stringify({name:"JARVIS",short_name:"JARVIS",display:"standalone",start_url:".",background_color:"#efd2ab",theme_color:"#efd2ab"})],{type:"application/json"}));document.head.appendChild(l)}catch(e){}
 S.hist.forEach(h=>bubble(h.role==="user"?"u":"a",h.content));bubble("a","Systems online. Type, tap the mic, or turn on the wake word in Settings.");
+{const ms=S.rem.filter(r=>!r.done&&r.t<=Date.now());if(ms.length){ms.forEach(r=>r.done=true);save();bubble("a","⏰ Missed while you were away: "+ms.map(r=>r.w).join("; "))}}
 panel("memory");ping();setInterval(ping,20000);log("boot complete");
 </script></body></html>
